@@ -1,5 +1,6 @@
 from commands import commands
 from socket import socket
+import json
 
 # All these "magic" variables come from reverse engineering the HS100 app, Kasa
 # We decompiled it and found their encryption function, then wrote this to try
@@ -71,9 +72,18 @@ def query(host, command):
         str: the returned str from the HS100, empty string means an error
     """
     if command not in commands:
-        raise Exception("Command {} not known".format(command))
+        # make sure it is valid json
+        try:
+            json.loads(command)
+            command_string = command
+        except ValueError:
+            raise Exception(
+                "Command {} not known and is not valid JSON".format(command)
+            )
+    else:
+        # the command is a shorthand name, so look it up
+        command_string = commands[command]
 
-    command_string = commands[command]
     tcp = socket()
     tcp.connect((host, PORT))
 
